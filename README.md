@@ -1,2 +1,1 @@
-# Praktika-project
-Репозиторий для выполнения практики
+# Student Project
