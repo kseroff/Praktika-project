@@ -1,0 +1,44 @@
+name: Auto assign random reviewer
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened]
+    branches:
+      - develop
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  assign-reviewer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Choose random reviewer
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REVIEWERS=("KasHatake" "LoreOfMetal11" "KKOOLLPP")
+
+          CANDIDATES=()
+
+          for reviewer in "${REVIEWERS[@]}"; do
+            if [ "$reviewer" != "$PR_AUTHOR" ]; then
+              CANDIDATES+=("$reviewer")
+            fi
+          done
+
+          SELECTED_REVIEWER=$(printf "%s\n" "${CANDIDATES[@]}" | shuf -n 1)
+
+          echo "PR author: $PR_AUTHOR"
+          echo "Selected reviewer: $SELECTED_REVIEWER"
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/pulls/$PR_NUMBER/requested_reviewers" \
+            -f reviewers[]="$SELECTED_REVIEWER"
