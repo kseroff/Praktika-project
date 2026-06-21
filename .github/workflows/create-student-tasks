@@ -1,0 +1,303 @@
+name: Create student tasks
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-tasks:
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      - name: Create labels
+        run: |
+          gh label create "type: feature" --description "Новая функциональность" --color "1f883d" --force --repo "$REPO"
+          gh label create "type: bug" --description "Ошибка или баг" --color "d1242f" --force --repo "$REPO"
+          gh label create "type: docs" --description "Документация" --color "0969da" --force --repo "$REPO"
+          gh label create "type: test" --description "Тестирование" --color "8250df" --force --repo "$REPO"
+
+          gh label create "priority: low" --description "Низкий приоритет" --color "bfdbfe" --force --repo "$REPO"
+          gh label create "priority: medium" --description "Средний приоритет" --color "fbca04" --force --repo "$REPO"
+          gh label create "priority: high" --description "Высокий приоритет" --color "d1242f" --force --repo "$REPO"
+
+          gh label create "needs review" --description "Нужна проверка другим участником" --color "d4c5f9" --force --repo "$REPO"
+
+          gh label create "component: src" --description "Исходный код в папке src" --color "0e8a16" --force --repo "$REPO"
+          gh label create "component: docs" --description "Документация в папке docs" --color "0052cc" --force --repo "$REPO"
+          gh label create "component: test-results" --description "Результаты тестирования в папке test-results" --color "5319e7" --force --repo "$REPO"
+
+      - name: Create student issues
+        run: |
+          gh issue create \
+            --repo "$REPO" \
+            --title "Реализовать алгоритм сортировки пузырьком" \
+            --assignee "KasHatake" \
+            --label "type: feature,priority: high,component: src" \
+            --body "## Описание
+
+          Нужно реализовать алгоритм сортировки пузырьком на языке C.
+
+          ## Требования
+
+          - код находится в папке src;
+          - сортировка массива чисел по возрастанию;
+          - отдельная функция для сортировки;
+          - понятные имена переменных;
+          - проект выполняется в Visual Studio;
+          - sln-проект должен лежать в папке src.
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/kashatake-bubble-sort
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/kashatake-bubble-sort -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
+
+          gh issue create \
+            --repo "$REPO" \
+            --title "Добавить сбор метрик сортировки" \
+            --assignee "KasHatake" \
+            --label "type: feature,priority: medium,component: src" \
+            --body "## Описание
+
+          Нужно добавить сбор метрик работы сортировки пузырьком.
+
+          ## Метрики
+
+          - количество сравнений;
+          - количество перестановок;
+          - размер входного массива;
+          - время выполнения, если получится реализовать аккуратно.
+
+          ## Результат
+
+          Метрики должны выводиться в консоль после сортировки.
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/kashatake-metrics
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/kashatake-metrics -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
+
+          gh issue create \
+            --repo "$REPO" \
+            --title "Сделать консольный интерфейс приложения" \
+            --assignee "LoreOfMetal11" \
+            --label "type: feature,priority: high,component: src" \
+            --body "## Описание
+
+          Нужно сделать простой консольный интерфейс для программы сортировки пузырьком.
+
+          ## Требования
+
+          - вывод меню;
+          - выбор способа ввода данных;
+          - запуск сортировки;
+          - вывод исходного массива;
+          - вывод отсортированного массива;
+          - понятные сообщения пользователю.
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/loreofmetal11-interface
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/loreofmetal11-interface -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
+
+          gh issue create \
+            --repo "$REPO" \
+            --title "Добавить валидацию входных данных" \
+            --assignee "LoreOfMetal11" \
+            --label "type: feature,priority: medium,component: src" \
+            --body "## Описание
+
+          Нужно добавить проверку корректности входных данных.
+
+          ## Проверить
+
+          - пустой ввод;
+          - нечисловые значения;
+          - слишком маленький массив;
+          - слишком большой массив;
+          - некорректный формат данных.
+
+          ## Результат
+
+          Программа не должна аварийно завершаться при неправильном вводе.
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/loreofmetal11-validation
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/loreofmetal11-validation -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
+
+          gh issue create \
+            --repo "$REPO" \
+            --title "Добавить чтение массива из файла" \
+            --assignee "LoreOfMetal11" \
+            --label "type: feature,priority: medium,component: src" \
+            --body "## Описание
+
+          Нужно добавить возможность чтения массива чисел из файла.
+
+          ## Требования
+
+          - пользователь может указать путь к файлу;
+          - программа проверяет, существует ли файл;
+          - программа корректно обрабатывает ошибки чтения;
+          - числа из файла передаются в алгоритм сортировки;
+          - при ошибке программа выводит понятное сообщение.
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/loreofmetal11-file-reading
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/loreofmetal11-file-reading -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
+
+          gh issue create \
+            --repo "$REPO" \
+            --title "Провести тестирование сортировки" \
+            --assignee "KKOOLLPP" \
+            --label "type: test,priority: high,component: test-results" \
+            --body "## Описание
+
+          Нужно протестировать работу консольного приложения сортировки пузырьком.
+
+          ## Проверить
+
+          - уже отсортированный массив;
+          - массив в обратном порядке;
+          - массив с одинаковыми значениями;
+          - массив с отрицательными числами;
+          - массив из одного элемента;
+          - пустой ввод;
+          - некорректный ввод;
+          - чтение данных из файла, когда эта функция будет готова.
+
+          ## Результат
+
+          Результаты тестирования оформить в папке test-results.
+
+          Например:
+
+          \`\`\`text
+          test-results/testing-report.md
+          \`\`\`
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/kkoollpp-testing
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/kkoollpp-testing -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
+
+          gh issue create \
+            --repo "$REPO" \
+            --title "Подготовить документацию проекта" \
+            --assignee "KKOOLLPP" \
+            --label "type: docs,priority: medium,component: docs" \
+            --body "## Описание
+
+          Нужно подготовить документацию проекта.
+
+          ## Документация должна содержать
+
+          - цель проекта;
+          - описание консольного приложения;
+          - как открыть проект в Visual Studio;
+          - где находится .sln;
+          - как запустить программу;
+          - как вводить данные;
+          - как использовать ввод из файла;
+          - пример работы программы;
+          - описание известных ограничений.
+
+          ## Результат
+
+          Документацию оформить в папке docs.
+
+          Например:
+
+          \`\`\`text
+          docs/user-guide.md
+          \`\`\`
+
+          ## Git workflow
+
+          Ветка:
+
+          \`\`\`bash
+          feature/kkoollpp-documentation
+          \`\`\`
+
+          Pull Request:
+
+          \`\`\`text
+          feature/kkoollpp-documentation -> develop
+          \`\`\`
+
+          Reviewer: другой студент, не автор задачи."
