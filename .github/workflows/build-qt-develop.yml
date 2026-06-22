@@ -1,0 +1,122 @@
+name: Build Qt develop
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'src/**'
+      - '.github/workflows/build-qt-develop.yml'
+
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - 'src/**'
+      - '.github/workflows/build-qt-develop.yml'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Windows Qt app
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          cache: 'true'
+
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Show Qt and qmake versions
+        shell: cmd
+        run: |
+          qmake -v
+          where qmake
+          where nmake
+          where windeployqt
+
+      - name: Find .pro file
+        id: find_pro
+        shell: pwsh
+        run: |
+          $proFiles = Get-ChildItem -Path "src" -Filter "*.pro" -Recurse
+
+          if ($proFiles.Count -eq 0) {
+            throw "No .pro file found inside src/"
+          }
+
+          if ($proFiles.Count -gt 1) {
+            Write-Host "Found several .pro files:"
+            $proFiles | ForEach-Object { Write-Host $_.FullName }
+            throw "Expected exactly one .pro file inside src/. Leave only one main project .pro file or adjust workflow manually."
+          }
+
+          $proFile = $proFiles[0].FullName
+          Write-Host "Found .pro file: $proFile"
+
+          "PRO_FILE=$proFile" >> $env:GITHUB_ENV
+
+      - name: Build Release with qmake
+        shell: cmd
+        run: |
+          mkdir build
+          cd build
+          qmake "%PRO_FILE%" CONFIG+=release
+          nmake
+
+      - name: Find built exe
+        shell: pwsh
+        run: |
+          $exeFiles = Get-ChildItem -Path "build" -Filter "*.exe" -Recurse
+
+          if ($exeFiles.Count -eq 0) {
+            throw "No .exe file found after build."
+          }
+
+          Write-Host "Found exe files:"
+          $exeFiles | ForEach-Object { Write-Host $_.FullName }
+
+          # Берём первый найденный exe. Для простого учебного проекта этого достаточно.
+          $exe = $exeFiles[0]
+
+          New-Item -ItemType Directory -Force -Path "package" | Out-Null
+          Copy-Item $exe.FullName -Destination "package"
+
+          "APP_EXE=$($exe.Name)" >> $env:GITHUB_ENV
+
+          Write-Host "Selected exe: $($exe.FullName)"
+          Write-Host "Exe name: $($exe.Name)"
+
+      - name: Deploy Qt dependencies
+        shell: cmd
+        run: |
+          cd package
+          windeployqt --release "%APP_EXE%"
+
+      - name: Create zip package
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "package/*" -DestinationPath "qt-app-windows-develop.zip" -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qt-app-windows-develop
+          path: qt-app-windows-develop.zip
+          retention-days: 14
