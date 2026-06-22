@@ -1,0 +1,427 @@
+
+name: Create student tasks
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-student-tasks:
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      - name: Create common labels
+        run: |
+          echo "Creating common labels..."
+
+          gh label create "type: feature" \
+            --description "Новая функциональность" \
+            --color "1f883d" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "type: bug" \
+            --description "Ошибка или баг" \
+            --color "d1242f" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "type: docs" \
+            --description "Документация" \
+            --color "0969da" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "type: test" \
+            --description "Тестирование" \
+            --color "8250df" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "priority: low" \
+            --description "Низкий приоритет" \
+            --color "bfdbfe" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "priority: medium" \
+            --description "Средний приоритет" \
+            --color "fbca04" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "priority: high" \
+            --description "Высокий приоритет" \
+            --color "d1242f" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "needs review" \
+            --description "Нужна проверка другим участником" \
+            --color "d4c5f9" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "component: src" \
+            --description "Исходный код в папке src" \
+            --color "0e8a16" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "component: docs" \
+            --description "Документация в папке docs" \
+            --color "0052cc" \
+            --force \
+            --repo "$REPO"
+
+          gh label create "component: test-results" \
+            --description "Результаты тестирования в папке test-results" \
+            --color "5319e7" \
+            --force \
+            --repo "$REPO"
+
+      - name: Prepare issue bodies
+        run: |
+          mkdir -p /tmp/student-issues
+
+          cat > /tmp/student-issues/kashatake-bubble-sort.md <<'EOF'
+          ## Описание
+
+          Нужно реализовать алгоритм сортировки пузырьком на языке C.
+
+          ## Требования
+
+          - код находится в папке `src`;
+          - проект выполняется в Visual Studio;
+          - `.sln` проекта должен лежать в папке `src`;
+          - сортировка массива чисел по возрастанию;
+          - отдельная функция для сортировки, если это удобно;
+          - понятные имена переменных;
+          - не смешивать алгоритм с консольным интерфейсом без необходимости.
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/kashatake-bubble-sort
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/kashatake-bubble-sort -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+          cat > /tmp/student-issues/kashatake-metrics.md <<'EOF'
+          ## Описание
+
+          Нужно добавить сбор метрик работы сортировки пузырьком.
+
+          ## Метрики
+
+          - количество сравнений;
+          - количество перестановок;
+          - размер входного массива;
+          - время выполнения, если получится реализовать аккуратно.
+
+          ## Требования
+
+          - метрики выводятся в консоль после сортировки;
+          - код находится в папке `src`;
+          - результат должен быть понятен пользователю.
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/kashatake-metrics
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/kashatake-metrics -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+          cat > /tmp/student-issues/lore-interface.md <<'EOF'
+          ## Описание
+
+          Нужно сделать простой консольный интерфейс для программы сортировки пузырьком.
+
+          ## Требования
+
+          - вывод меню;
+          - выбор способа ввода данных;
+          - запуск сортировки;
+          - вывод исходного массива;
+          - вывод отсортированного массива;
+          - понятные сообщения пользователю.
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/loreofmetal11-interface
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/loreofmetal11-interface -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+          cat > /tmp/student-issues/lore-validation.md <<'EOF'
+          ## Описание
+
+          Нужно добавить проверку корректности входных данных.
+
+          ## Проверить
+
+          - пустой ввод;
+          - нечисловые значения;
+          - слишком маленький массив;
+          - слишком большой массив;
+          - некорректный формат данных;
+          - повторный ввод при ошибке, если это удобно.
+
+          ## Результат
+
+          Программа не должна аварийно завершаться при неправильном вводе.
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/loreofmetal11-validation
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/loreofmetal11-validation -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+          cat > /tmp/student-issues/lore-file-reading.md <<'EOF'
+          ## Описание
+
+          Нужно добавить возможность чтения массива чисел из файла.
+
+          ## Требования
+
+          - пользователь может указать путь к файлу;
+          - программа проверяет, существует ли файл;
+          - программа корректно обрабатывает ошибки чтения;
+          - числа из файла передаются в алгоритм сортировки;
+          - при ошибке программа выводит понятное сообщение.
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/loreofmetal11-file-reading
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/loreofmetal11-file-reading -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+          cat > /tmp/student-issues/kkoollpp-testing.md <<'EOF'
+          ## Описание
+
+          Нужно протестировать работу консольного приложения сортировки пузырьком.
+
+          ## Проверить
+
+          - уже отсортированный массив;
+          - массив в обратном порядке;
+          - массив с одинаковыми значениями;
+          - массив с отрицательными числами;
+          - массив из одного элемента;
+          - пустой ввод;
+          - некорректный ввод;
+          - чтение данных из файла, когда эта функция будет готова.
+
+          ## Результат
+
+          Результаты тестирования оформить в папке `test-results`.
+
+          Можно добавить файл:
+
+          ```text
+          test-results/testing-report.md
+          ```
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/kkoollpp-testing
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/kkoollpp-testing -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+          cat > /tmp/student-issues/kkoollpp-docs.md <<'EOF'
+          ## Описание
+
+          Нужно подготовить документацию проекта.
+
+          ## Документация должна содержать
+
+          - цель проекта;
+          - описание консольного приложения;
+          - как открыть проект в Visual Studio;
+          - где находится `.sln`;
+          - как запустить программу;
+          - как вводить данные;
+          - как использовать ввод из файла;
+          - пример работы программы;
+          - описание известных ограничений.
+
+          ## Результат
+
+          Документацию оформить в папке `docs`.
+
+          Можно добавить файл:
+
+          ```text
+          docs/user-guide.md
+          ```
+
+          ## Git workflow
+
+          Рабочая ветка:
+
+          ```bash
+          feature/kkoollpp-documentation
+          ```
+
+          Pull Request:
+
+          ```text
+          feature/kkoollpp-documentation -> develop
+          ```
+
+          ## Проверка
+
+          Reviewer должен быть другой студент, не автор задачи.
+          EOF
+
+      - name: Create issues
+        run: |
+          create_issue_if_missing() {
+            TITLE="$1"
+            ASSIGNEE="$2"
+            LABELS="$3"
+            BODY_FILE="$4"
+
+            EXISTING_URL=$(gh issue list \
+              --repo "$REPO" \
+              --state all \
+              --search "$TITLE in:title" \
+              --json title,url \
+              --jq ".[] | select(.title == \"$TITLE\") | .url" | head -n 1)
+
+            if [ -n "$EXISTING_URL" ]; then
+              echo "Issue already exists: $TITLE"
+              echo "$EXISTING_URL"
+            else
+              echo "Creating issue: $TITLE"
+              gh issue create \
+                --repo "$REPO" \
+                --title "$TITLE" \
+                --assignee "$ASSIGNEE" \
+                --label "$LABELS" \
+                --body-file "$BODY_FILE"
+            fi
+          }
+
+          create_issue_if_missing \
+            "Реализовать алгоритм сортировки пузырьком" \
+            "KasHatake" \
+            "type: feature,priority: high,component: src" \
+            "/tmp/student-issues/kashatake-bubble-sort.md"
+
+          create_issue_if_missing \
+            "Добавить сбор метрик сортировки" \
+            "KasHatake" \
+            "type: feature,priority: medium,component: src" \
+            "/tmp/student-issues/kashatake-metrics.md"
+
+          create_issue_if_missing \
+            "Сделать консольный интерфейс приложения" \
+            "LoreOfMetal11" \
+            "type: feature,priority: high,component: src" \
+            "/tmp/student-issues/lore-interface.md"
+
+          create_issue_if_missing \
+            "Добавить валидацию входных данных" \
+            "LoreOfMetal11" \
+            "type: feature,priority: medium,component: src" \
+            "/tmp/student-issues/lore-validation.md"
+
+          create_issue_if_missing \
+            "Добавить чтение массива из файла" \
+            "LoreOfMetal11" \
+            "type: feature,priority: medium,component: src" \
+            "/tmp/student-issues/lore-file-reading.md"
+
+          create_issue_if_missing \
+            "Провести тестирование сортировки" \
+            "KKOOLLPP" \
+            "type: test,priority: high,component: test-results" \
+            "/tmp/student-issues/kkoollpp-testing.md"
+
+          create_issue_if_missing \
+            "Подготовить документацию проекта" \
+            "KKOOLLPP" \
+            "type: docs,priority: medium,component: docs" \
+            "/tmp/student-issues/kkoollpp-docs.md"
