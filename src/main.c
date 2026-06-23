@@ -1,191 +1,12 @@
+#include "sorting.h"
+#include "file_utils.h"
+#include "utils.h"
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/time.h>
 #include <locale.h>
-#include <unistd.h>
-
-const char* default_filename = "Array.txt";
-const char* sorted_filename = "SortedArray.txt";
-
-typedef struct {
-    double time_spent;
-    int swapCount;
-} SortResult;
-
-void clear_screen() {
-    if (getenv("TERM")) {
-        system("clear");
-    }
-    else {
-        printf("\n\n\n\n\n");
-    }
-}
-
-double get_time_seconds() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
-}
-
-int readArrayFromFile(const char* filename, int** array, int* size) {
-    FILE* file = fopen(filename, "r");
-    if (file == NULL) {
-        printf("Ошибка: не удалось открыть файл %s\n", filename);
-        return 0;
-    }
-
-    int count = 0;
-    int temp;
-    while (fscanf(file, "%d", &temp) == 1) count++;
-
-    if (count == 0) {
-        printf("Файл пуст или содержит нечисловые данные\n");
-        fclose(file);
-        return 0;
-    }
-
-    *array = (int*)malloc(count * sizeof(int));
-    if (*array == NULL) {
-        printf("Ошибка выделения памяти\n");
-        fclose(file);
-        return 0;
-    }
-
-    rewind(file);
-    for (int i = 0; i < count; i++) {
-        if (fscanf(file, "%d", &(*array)[i]) != 1) {
-            printf("Ошибка чтения числа из файла\n");
-            free(*array);
-            fclose(file);
-            return 0;
-        }
-    }
-
-    fclose(file);
-    *size = count;
-    return 1;
-}
-
-void RecordSortedArray(const char* filename, int* array, int size) {
-    FILE* file = fopen(filename, "w");
-    if (file == NULL) {
-        printf("Ошибка: не удалось создать файл %s\n", filename);
-        return;
-    }
-
-    for (int i = 0; i < size; i++) {
-        fprintf(file, "%d ", array[i]);
-    }
-
-    fclose(file);
-    printf("Массив успешно записан в файл %s\n", filename);
-}
-
-SortResult bubbleSort(int* arr, int size, int method) {
-    double start = get_time_seconds();
-
-    SortResult result = { 0, 0 };
-
-    for (int i = 0; i < size - 1; i++) {
-        for (int j = 0; j < size - i - 1; j++) {
-            if (method == 2) {
-                if (arr[j] > arr[j + 1]) {
-                    int temp = arr[j];
-                    arr[j] = arr[j + 1];
-                    arr[j + 1] = temp;
-                    result.swapCount++;
-                }
-            }
-            else if (method == 1) {
-                if (arr[j] < arr[j + 1]) {
-                    int temp = arr[j];
-                    arr[j] = arr[j + 1];
-                    arr[j + 1] = temp;
-                    result.swapCount++;
-                }
-            }
-        }
-    }
-
-    double end = get_time_seconds();
-    result.time_spent = end - start;
-    return result;
-}
-
-int MakeArrayFile(int min, int max, int size, const char* filename) {
-    if (min >= max) {
-        printf("Ошибка: нижний предел должен быть меньше верхнего.\n");
-        return 0;
-    }
-    if (size <= 0) {
-        printf("Ошибка: размер массива должен быть положительным.\n");
-        return 0;
-    }
-
-    FILE* file = fopen(filename, "w");
-    if (file == NULL) {
-        printf("Ошибка: не удалось создать или открыть файл %s.\n", filename);
-        return 0;
-    }
-
-    srand((unsigned)time(NULL));
-    for (int i = 0; i < size; i++) {
-        int num = rand() % (max - min + 1) + min;
-        printf("%d ", num);
-        fprintf(file, "%d ", num);
-    }
-
-    fclose(file);
-    printf("\nФайл %s успешно создан.\n", filename);
-    return 1;
-}
-
-int OwnArray(const char* filename) {
-    FILE* file = fopen(filename, "w");
-    if (file == NULL) {
-        printf("Ошибка открытия файла!\n");
-        return 0;
-    }
-
-    printf("Введите целые числа через пробел или каждое с новой строки.\n");
-    printf("Для завершения ввода введите '!' на новой строке:\n");
-
-    char input[256];
-    while (1) {
-        if (fgets(input, sizeof(input), stdin) == NULL) {
-            break;
-        }
-
-        if (strchr(input, '!') != NULL) break;
-
-        char* token = strtok(input, " \n");
-        while (token != NULL) {
-            if (strcmp(token, "!") == 0) {
-                fclose(file);
-                printf("Файл %s успешно создан.\n", filename);
-                return 1;
-            }
-
-            int value;
-            if (sscanf(token, "%d", &value) == 1) {
-                fprintf(file, "%d ", value);
-            }
-            token = strtok(NULL, " \n");
-        }
-    }
-
-    fclose(file);
-    printf("Файл %s успешно создан.\n", filename);
-    return 1;
-}
-
-int checkForExtraChars() {
-    int c = getchar();
-    return (c != '\n' && c != EOF);
-}
 
 int main() {
     setlocale(LC_ALL, "");
@@ -198,17 +19,17 @@ int main() {
     int* current_array = NULL;
 
     while (1) {
-        printf("\nМеню:\n");
-        printf("1. Создать массив с клавиатуры\n");
-        printf("2. Сгенерировать случайный массив\n");
-        printf("3. Загрузить массив из файла\n");
-        printf("4. Отсортировать текущий массив\n");
-        printf("5. Выйти\n");
-        printf("Выберите действие: ");
+        printf("\nРњРµРЅСЋ:\n");
+        printf("1. РЎРѕР·РґР°С‚СЊ РјР°СЃСЃРёРІ СЃ РєР»Р°РІРёР°С‚СѓСЂС‹\n");
+        printf("2. РЎРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ СЃР»СѓС‡Р°Р№РЅС‹Р№ РјР°СЃСЃРёРІ\n");
+        printf("3. Р—Р°РіСЂСѓР·РёС‚СЊ РјР°СЃСЃРёРІ РёР· С„Р°Р№Р»Р°\n");
+        printf("4. РћС‚СЃРѕСЂС‚РёСЂРѕРІР°С‚СЊ С‚РµРєСѓС‰РёР№ РјР°СЃСЃРёРІ\n");
+        printf("5. Р’С‹Р№С‚Рё\n");
+        printf("Р’С‹Р±РµСЂРёС‚Рµ РґРµР№СЃС‚РІРёРµ: ");
 
         int choice;
         if (scanf("%d", &choice) != 1) {
-            printf("Ошибка ввода. Пожалуйста, введите число.\n");
+            printf("РћС€РёР±РєР° РІРІРѕРґР°. РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІРІРµРґРёС‚Рµ С‡РёСЃР»Рѕ.\n");
             while (getchar() != '\n');
             continue;
         }
@@ -216,7 +37,7 @@ int main() {
         switch (choice) {
         case 1: {
             while (getchar() != '\n');
-            printf("Введите имя файла (по умолчанию %s): ", current_filename);
+            printf("Р’РІРµРґРёС‚Рµ РёРјСЏ С„Р°Р№Р»Р° (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ %s): ", default_filename);
 
             char filename_buffer[100];
             fgets(filename_buffer, sizeof(filename_buffer), stdin);
@@ -227,42 +48,68 @@ int main() {
             }
 
             if (OwnArray(current_filename)) {
-                if (current_array) free(current_array);
+                if (current_array) {
+                    free(current_array);
+                    current_array = NULL;
+                }
+
                 if (readArrayFromFile(current_filename, &current_array, &size)) {
-                    printf("Массив успешно загружен. Размер: %d\n", size);
+                    printf("РњР°СЃСЃРёРІ СѓСЃРїРµС€РЅРѕ Р·Р°РіСЂСѓР¶РµРЅ. Р Р°Р·РјРµСЂ: %d\n", size);
+                }
+                else {
+                    printf("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РјР°СЃСЃРёРІ РёР· С„Р°Р№Р»Р°.\n");
+                    current_array = NULL;
+                    size = 0;
                 }
             }
 
-            printf("Нажмите Enter чтобы продолжить.\n");
+            printf("РќР°Р¶РјРёС‚Рµ Enter С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ.\n");
             getchar();
             clear_screen();
             break;
         }
 
         case 2: {
-            printf("Введите размер массива: ");
-            if (scanf("%d", &size) != 1 || size <= 0 || checkForExtraChars()) {
-                printf("Неверный размер массива.\n");
+            int size_input, min, max;
+
+            printf("Р’РІРµРґРёС‚Рµ СЂР°Р·РјРµСЂ РјР°СЃСЃРёРІР°: ");
+            if (scanf("%d", &size_input) != 1 || size_input <= 0 || checkForExtraChars()) {
+                printf("РќРµРІРµСЂРЅС‹Р№ СЂР°Р·РјРµСЂ РјР°СЃСЃРёРІР°.\n");
                 while (getchar() != '\n');
                 continue;
             }
 
-            int min, max;
-            printf("Введите диапазон (min max): ");
-            if (scanf("%d %d", &min, &max) != 2 || min >= max || checkForExtraChars()) {
-                printf("Неверный диапазон.\n");
+            printf("Р’РІРµРґРёС‚Рµ min: ");
+            if (scanf("%d", &min) != 1 || checkForExtraChars()) {
+                printf("РќРµРІРµСЂРЅС‹Р№ min.\n");
                 while (getchar() != '\n');
                 continue;
             }
 
-            if (MakeArrayFile(min, max, size, current_filename)) {
-                if (current_array) free(current_array);
+            printf("Р’РІРµРґРёС‚Рµ max: ");
+            if (scanf("%d", &max) != 1 || max <= min || checkForExtraChars()) {
+                printf("РќРµРІРµСЂРЅС‹Р№ max.\n");
+                while (getchar() != '\n');
+                continue;
+            }
+
+            if (MakeArrayFile(min, max, size_input, current_filename)) {
+                if (current_array) {
+                    free(current_array);
+                    current_array = NULL;
+                }
+
                 if (readArrayFromFile(current_filename, &current_array, &size)) {
-                    printf("Массив успешно создан и загружен. Размер: %d\n", size);
+                    printf("РњР°СЃСЃРёРІ СѓСЃРїРµС€РЅРѕ СЃРѕР·РґР°РЅ Рё Р·Р°РіСЂСѓР¶РµРЅ. Р Р°Р·РјРµСЂ: %d\n", size);
+                }
+                else {
+                    printf("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РјР°СЃСЃРёРІ РёР· С„Р°Р№Р»Р°.\n");
+                    current_array = NULL;
+                    size = 0;
                 }
             }
 
-            printf("Нажмите Enter чтобы продолжить.\n");
+            printf("РќР°Р¶РјРёС‚Рµ Enter С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ.\n");
             getchar();
             clear_screen();
             break;
@@ -271,18 +118,27 @@ int main() {
         case 3: {
             while (getchar() != '\n');
 
-            printf("Введите имя файла: ");
+            printf("Р’РІРµРґРёС‚Рµ РёРјСЏ С„Р°Р№Р»Р°: ");
             char filename_buffer[100];
             fgets(filename_buffer, sizeof(filename_buffer), stdin);
             filename_buffer[strcspn(filename_buffer, "\n")] = '\0';
 
-            if (current_array) free(current_array);
-            if (readArrayFromFile(filename_buffer, &current_array, &size)) {
-                strcpy(current_filename, filename_buffer);
-                printf("Массив успешно загружен. Размер: %d\n", size);
+            if (current_array) {
+                free(current_array);
+                current_array = NULL;
             }
 
-            printf("Нажмите Enter чтобы продолжить.\n");
+            if (readArrayFromFile(filename_buffer, &current_array, &size)) {
+                strcpy(current_filename, filename_buffer);
+                printf("РњР°СЃСЃРёРІ СѓСЃРїРµС€РЅРѕ Р·Р°РіСЂСѓР¶РµРЅ. Р Р°Р·РјРµСЂ: %d\n", size);
+            }
+            else {
+                printf("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РјР°СЃСЃРёРІ РёР· С„Р°Р№Р»Р° %s.\n", filename_buffer);
+                current_array = NULL;
+                size = 0;
+            }
+
+            printf("РќР°Р¶РјРёС‚Рµ Enter С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ.\n");
             getchar();
             clear_screen();
             break;
@@ -290,30 +146,35 @@ int main() {
 
         case 4: {
             if (!current_array || size == 0) {
-                printf("Нет загруженного массива для сортировки.\n");
+                printf("РќРµС‚ Р·Р°РіСЂСѓР¶РµРЅРЅРѕРіРѕ РјР°СЃСЃРёРІР° РґР»СЏ СЃРѕСЂС‚РёСЂРѕРІРєРё.\n");
                 break;
             }
 
-            printf("Тип сортировки:\n1. По убыванию\n2. По возрастанию\nВыберите: ");
+            printf("РўРёРї СЃРѕСЂС‚РёСЂРѕРІРєРё:\n1. РџРѕ СѓР±С‹РІР°РЅРёСЋ\n2. РџРѕ РІРѕР·СЂР°СЃС‚Р°РЅРёСЋ\nР’С‹Р±РµСЂРёС‚Рµ: ");
             int method;
             if (scanf("%d", &method) != 1 || (method != 1 && method != 2) || checkForExtraChars()) {
-                printf("Неверный выбор.\n");
+                printf("РќРµРІРµСЂРЅС‹Р№ РІС‹Р±РѕСЂ.\n");
                 while (getchar() != '\n');
                 continue;
             }
 
             SortResult sortResult = bubbleSort(current_array, size, method);
 
-            printf("Отсортированный массив:\n");
+            printf("РћС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅС‹Р№ РјР°СЃСЃРёРІ:\n");
             for (int i = 0; i < size; i++) {
                 printf("%d ", current_array[i]);
             }
-            printf("\nВремя выполнения: %.6f секунд\n", sortResult.time_spent);
-            printf("Количество перестановок: %d\n", sortResult.swapCount);
+            printf("\nР’СЂРµРјСЏ РІС‹РїРѕР»РЅРµРЅРёСЏ: %.6f СЃРµРєСѓРЅРґ\n", sortResult.time_spent);
+            printf("РљРѕР»РёС‡РµСЃС‚РІРѕ РїРµСЂРµСЃС‚Р°РЅРѕРІРѕРє: %lld\n", sortResult.swapCount);
 
-            RecordSortedArray(sorted_filename, current_array, size);
-
-            printf("Нажмите Enter чтобы продолжить.\n");
+            int result = RecordSortedArray(sorted_filename, current_array, size);
+            if (result == 0) {
+                printf("Р¤Р°Р№Р» СѓСЃРїРµС€РЅРѕ Р·Р°РїРёСЃР°РЅ\n");
+            } else {
+                printf("РћС€РёР±РєР° Р·Р°РїРёСЃРё С„Р°Р№Р»Р°\n");
+                return 1;
+            }
+            printf("РќР°Р¶РјРёС‚Рµ Enter С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ.\n");
             getchar();
             clear_screen();
             break;
@@ -321,12 +182,12 @@ int main() {
 
         case 5:
             clear_screen();
-            printf("\n\n\n\n\nРабота программы завершена.\nЖелаем хорошего дня.\n\n\n\n\n");
+            printf("\n\n\n\n==========================\nР Р°Р±РѕС‚Р° РїСЂРѕРіСЂР°РјРјС‹ Р·Р°РІРµСЂС€РµРЅР°.\nР–РµР»Р°РµРј С…РѕСЂРѕС€РµРіРѕ РґРЅСЏ.\n==========================\n\n\n\n");
             if (current_array) free(current_array);
             return 0;
 
         default:
-            printf("Неверный выбор. Попробуйте снова.\n");
+            printf("РќРµРІРµСЂРЅС‹Р№ РІС‹Р±РѕСЂ. РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.\n");
         }
     }
 }
