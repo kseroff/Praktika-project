@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "sorting.h"
 #include "file_utils.h"
 #include "utils.h"
@@ -5,189 +7,209 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <locale.h>
 
-int main() {
-    setlocale(LC_ALL, "");
+#define MAX_FILENAME_LENGTH 100
 
+static void set_current_filename(char* destination, size_t destination_size, const char* source) {
+    if (destination == NULL || destination_size == 0 || source == NULL) {
+        return;
+    }
+
+    snprintf(destination, destination_size, "%s", source);
+}
+
+static void pause_and_clear(void) {
+    printf("Нажмите Enter чтобы продолжить.");
+    wait_for_enter();
     clear_screen();
-    srand((unsigned)time(NULL));
+}
 
-    char current_filename[100] = "Array.txt";
+int main(void) {
+    char current_filename[MAX_FILENAME_LENGTH] = "Array.txt";
     int size = 0;
     int* current_array = NULL;
 
+    setlocale(LC_ALL, "");
+    srand((unsigned)time(NULL));
+
+    clear_screen();
+
     while (1) {
+        int choice;
+
         printf("\nМеню:\n");
         printf("1. Создать массив с клавиатуры\n");
         printf("2. Сгенерировать случайный массив\n");
         printf("3. Загрузить массив из файла\n");
         printf("4. Отсортировать текущий массив\n");
         printf("5. Выйти\n");
-        printf("Выберите действие: ");
 
-        int choice;
-        if (scanf("%d", &choice) != 1) {
+        if (!read_int_from_stdin("Выберите действие: ", &choice)) {
             printf("Ошибка ввода. Пожалуйста, введите число.\n");
-            while (getchar() != '\n');
+            pause_and_clear();
             continue;
         }
 
         switch (choice) {
         case 1: {
-            while (getchar() != '\n');
-            printf("Введите имя файла (по умолчанию %s): ", default_filename);
+            char filename_buffer[MAX_FILENAME_LENGTH];
 
-            char filename_buffer[100];
-            fgets(filename_buffer, sizeof(filename_buffer), stdin);
-            filename_buffer[strcspn(filename_buffer, "\n")] = '\0';
+            printf("Введите имя файла (по умолчанию %s): ", default_filename);
+            if (!read_line(filename_buffer, sizeof(filename_buffer))) {
+                printf("Ошибка чтения имени файла.\n");
+                pause_and_clear();
+                break;
+            }
 
             if (strlen(filename_buffer) > 0) {
-                strcpy(current_filename, filename_buffer);
+                set_current_filename(current_filename, sizeof(current_filename), filename_buffer);
+            } else {
+                set_current_filename(current_filename, sizeof(current_filename), default_filename);
             }
 
             if (OwnArray(current_filename)) {
-                if (current_array) {
-                    free(current_array);
-                    current_array = NULL;
-                }
+                free(current_array);
+                current_array = NULL;
 
                 if (readArrayFromFile(current_filename, &current_array, &size)) {
                     printf("Массив успешно загружен. Размер: %d\n", size);
-                }
-                else {
+                } else {
                     printf("Не удалось загрузить массив из файла.\n");
                     current_array = NULL;
                     size = 0;
                 }
             }
 
-            printf("Нажмите Enter чтобы продолжить.\n");
-            getchar();
-            clear_screen();
+            pause_and_clear();
             break;
         }
 
         case 2: {
-            int size_input, min, max;
+            int size_input;
+            int min;
+            int max;
 
-            printf("Введите размер массива: ");
-            if (scanf("%d", &size_input) != 1 || size_input <= 0 || checkForExtraChars()) {
+            if (!read_int_from_stdin("Введите размер массива: ", &size_input) || size_input <= 0) {
                 printf("Неверный размер массива.\n");
-                while (getchar() != '\n');
-                continue;
+                pause_and_clear();
+                break;
             }
 
-            printf("Введите min: ");
-            if (scanf("%d", &min) != 1 || checkForExtraChars()) {
+            if (!read_int_from_stdin("Введите min: ", &min)) {
                 printf("Неверный min.\n");
-                while (getchar() != '\n');
-                continue;
+                pause_and_clear();
+                break;
             }
 
-            printf("Введите max: ");
-            if (scanf("%d", &max) != 1 || max <= min || checkForExtraChars()) {
+            if (!read_int_from_stdin("Введите max: ", &max) || max <= min) {
                 printf("Неверный max.\n");
-                while (getchar() != '\n');
-                continue;
+                pause_and_clear();
+                break;
             }
 
             if (MakeArrayFile(min, max, size_input, current_filename)) {
-                if (current_array) {
-                    free(current_array);
-                    current_array = NULL;
-                }
+                free(current_array);
+                current_array = NULL;
 
                 if (readArrayFromFile(current_filename, &current_array, &size)) {
                     printf("Массив успешно создан и загружен. Размер: %d\n", size);
-                }
-                else {
+                } else {
                     printf("Не удалось загрузить массив из файла.\n");
                     current_array = NULL;
                     size = 0;
                 }
             }
 
-            printf("Нажмите Enter чтобы продолжить.\n");
-            getchar();
-            clear_screen();
+            pause_and_clear();
             break;
         }
 
         case 3: {
-            while (getchar() != '\n');
+            char filename_buffer[MAX_FILENAME_LENGTH];
 
             printf("Введите имя файла: ");
-            char filename_buffer[100];
-            fgets(filename_buffer, sizeof(filename_buffer), stdin);
-            filename_buffer[strcspn(filename_buffer, "\n")] = '\0';
-
-            if (current_array) {
-                free(current_array);
-                current_array = NULL;
+            if (!read_line(filename_buffer, sizeof(filename_buffer))) {
+                printf("Ошибка чтения имени файла.\n");
+                pause_and_clear();
+                break;
             }
+
+            if (strlen(filename_buffer) == 0) {
+                printf("Имя файла не может быть пустым.\n");
+                pause_and_clear();
+                break;
+            }
+
+            free(current_array);
+            current_array = NULL;
 
             if (readArrayFromFile(filename_buffer, &current_array, &size)) {
-                strcpy(current_filename, filename_buffer);
+                set_current_filename(current_filename, sizeof(current_filename), filename_buffer);
                 printf("Массив успешно загружен. Размер: %d\n", size);
-            }
-            else {
+            } else {
                 printf("Не удалось загрузить массив из файла %s.\n", filename_buffer);
                 current_array = NULL;
                 size = 0;
             }
 
-            printf("Нажмите Enter чтобы продолжить.\n");
-            getchar();
-            clear_screen();
+            pause_and_clear();
             break;
         }
 
         case 4: {
-            if (!current_array || size == 0) {
+            int method;
+            SortResult sortResult;
+
+            if (current_array == NULL || size == 0) {
                 printf("Нет загруженного массива для сортировки.\n");
+                pause_and_clear();
                 break;
             }
 
-            printf("Тип сортировки:\n1. По убыванию\n2. По возрастанию\nВыберите: ");
-            int method;
-            if (scanf("%d", &method) != 1 || (method != 1 && method != 2) || checkForExtraChars()) {
+            printf("Тип сортировки:\n1. По убыванию\n2. По возрастанию\n");
+            if (!read_int_from_stdin("Выберите: ", &method) ||
+                (method != SORT_DESC && method != SORT_ASC)) {
                 printf("Неверный выбор.\n");
-                while (getchar() != '\n');
-                continue;
+                pause_and_clear();
+                break;
             }
 
-            SortResult sortResult = bubbleSort(current_array, size, method);
+            sortResult = bubbleSort(current_array, size, method);
 
             printf("Отсортированный массив:\n");
             for (int i = 0; i < size; i++) {
-                printf("%d ", current_array[i]);
+                printf("%d", current_array[i]);
+                if (i + 1 < size) {
+                    printf(" ");
+                }
             }
+
             printf("\nВремя выполнения: %.6f секунд\n", sortResult.time_spent);
+            printf("Количество сравнений: %lld\n", sortResult.comparisonCount);
             printf("Количество перестановок: %lld\n", sortResult.swapCount);
 
-            int result = RecordSortedArray(sorted_filename, current_array, size);
-            if (result == 0) {
-                printf("Файл успешно записан\n");
-            } else {
-                printf("Ошибка записи файла\n");
-                return 1;
+            if (!RecordSortedArray(sorted_filename, current_array, size)) {
+                printf("Не удалось записать отсортированный массив.\n");
             }
-            printf("Нажмите Enter чтобы продолжить.\n");
-            getchar();
-            clear_screen();
+
+            pause_and_clear();
             break;
         }
 
         case 5:
             clear_screen();
-            printf("\n\n\n\n==========================\nРабота программы завершена.\nЖелаем хорошего дня.\n==========================\n\n\n\n");
-            if (current_array) free(current_array);
+            printf("\n==========================\n");
+            printf("Работа программы завершена.\n");
+            printf("Желаем хорошего дня.\n");
+            printf("==========================\n");
+            free(current_array);
             return 0;
 
         default:
             printf("Неверный выбор. Попробуйте снова.\n");
+            pause_and_clear();
+            break;
         }
     }
 }
